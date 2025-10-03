@@ -1,7 +1,6 @@
 export const produtos = [
   
 
-  
     {
       "id": "1",
       "nome": "Espresso",
@@ -146,4 +145,5 @@ export const produtos = [
       "vegano": true,
       "categoria": "gelados"
     }
+
 ];
