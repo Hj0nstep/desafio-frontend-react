@@ -1,71 +1,130 @@
-import closeImage from '../assets/X.svg'
-import deleteImage from '../assets/Trash.svg'
-import plantImage from '../assets/Plant.png'
-import plusImage  from '../assets/Plus.svg'
-import minusImage  from '../assets/Minus.svg'
-import '../css/cart.css'
+import { useState } from "react";
+import closeImage from "../assets/X.svg";
+import deleteImage from "../assets/Trash.svg";
+import plantImage from "../assets/Plant.png";
+import cowImage from "../assets/Cow.png";
+import plusImage from "../assets/Plus.svg";
+import minusImage from "../assets/Minus.svg";
+import "../css/cart.css";
 
-export function Cart() {
+export function Cart({ onClose }) {
+  const [cartProducts, setCartProducts] = useState([
+    {
+      id: "c1",
+      idProduto: "4",
+      nome: "Café com leite",
+      imagem: "/product-03.png",
+      preco: 1000,
+      vegano: false,
+      quantidade: 1
+    },
+    {
+      id: "c2",
+      idProduto: "1",
+      nome: "Espresso",
+      imagem: "/product-01.png",
+      preco: 800,
+      vegano: true,
+      quantidade: 1
+    }
+  ]);
+
+  const handlePlus = (id) => {
+    setCartProducts(prev =>
+      prev.map(p =>
+        p.id === id ? { ...p, quantidade: p.quantidade + 1 } : p
+      )
+    );
+  };
+
+  const handleMinus = (id) => {
+    setCartProducts(prev =>
+      prev.map(p =>
+        p.id === id
+          ? { ...p, quantidade: p.quantidade > 1 ? p.quantidade - 1 : 1 }
+          : p
+      )
+    );
+  };
+
+  const handleDelete = (id) => {
+    setCartProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleDeleteAll = () => setCartProducts([]);
+
+  const subtotal = cartProducts.reduce(
+    (acc, p) => acc + p.preco * p.quantidade,
+    0
+  );
+
   return (
     <div className="cart">
       <section className="cart__header">
         <h3 className="cart__title">Seu carrinho</h3>
-        <button className="cart__close">
-          <img src={closeImage} alt="fechar carrinho" />
+        <button className="cart__close" onClick={onClose}>
+          <img src={closeImage} alt="Fechar carrinho" />
         </button>
       </section>
+
       <section className="cart__body">
         <div className="cart__info">
-          <h4 className="cart__quantityItems">5 itens</h4>
-          <a href="#" className="cart__deleteAll">
+          <h4 className="cart__quantityItems">{cartProducts.length} itens</h4>
+          <button onClick={handleDeleteAll} className="cart__deleteAll">
             Excluir Tudo
-          </a>
+          </button>
         </div>
+
         <div className="cart__products">
-          <div className="cart__product">
-            <img
-              src="/product-01.png"
-              alt=""
-              className="cart__productImage"
-            />
+          {cartProducts.map(produto => (
+            <div key={produto.id} className="cart__product">
+              <img src={produto.imagem} alt={produto.nome} className="cart__productImage" />
 
-            <div className="cart__productInfo">
-              <div className="cart__productRow">
-                <div className="cart__productColumn">
-                  <h2 className="cart__productName">Café Espresso</h2>
-
-                  <div className="product__tag">
-                    <img src={plantImage} alt="vegano" />
-                    <span>Vegano</span>
+              <div className="cart__productInfo">
+                <div className="cart__productRow">
+                  <div className="cart__productColumn">
+                    <h2 className="cart__productName">{produto.nome}</h2>
+                    <div className="product__tag">
+                      <img
+                        src={produto.vegano ? plantImage : cowImage}
+                        alt={produto.vegano ? "Vegano" : "Contém lactose"}
+                      />
+                      <span>{produto.vegano ? "Vegano" : "Contém lactose"}</span>
+                    </div>
                   </div>
+
+                  <button onClick={() => handleDelete(produto.id)} className="cart__productDelete">
+                    <img src={deleteImage} alt="Deletar produto" />
+                  </button>
                 </div>
 
-                <button className="cart__productDelete">
-                  <img src={deleteImage} alt="Deletar produto" />
-                </button>
-              </div>
-
-              <div className="cart__productRow">
-                <h3 className="cart__productPrice">R$ 10,00</h3>
-
-                <section className="product__quantity">
-                  <button type="button" className="product__quantityMinus">
-                    <img src={plusImage} alt="mais um" />
-                  </button>
-                  <input type="text" readOnly className="product__quantityInput" value={1} />
-                  <button type="button" className="product__quantityPlus">
-                    <img src={minusImage} alt="menos um" />
-                  </button>
-                </section>
+                <div className="cart__productRow">
+                  <h3 className="cart__productPrice">R$ {(produto.preco / 100).toFixed(2).replace(".", ",")}</h3>
+                  <section className="product__quantity">
+                    <button type="button" onClick={() => handleMinus(produto.id)} className="product__quantityMinus">
+                      <img src={minusImage} alt="menos um" />
+                    </button>
+                    <input
+                      type="text"
+                      readOnly
+                      className="product__quantityInput"
+                      value={produto.quantidade}
+                    />
+                    <button type="button" onClick={() => handlePlus(produto.id)} className="product__quantityPlus">
+                      <img src={plusImage} alt="mais um" />
+                    </button>
+                  </section>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
       </section>
+
       <section className="cart__footer">
         <div className="cart__footerRow cart__footerSubtotal">
           <h3 className="cart__footerTitle">Subtotal</h3>
-          <h3 className="cart__footerPrice">R$ 1500,00</h3>
+          <h3 className="cart__footerPrice">R$ {(subtotal / 100).toFixed(2).replace(".", ",")}</h3>
         </div>
         <div className="cart__footerRow cart__footerDelivery">
           <h3 className="cart__footerTitle">Entrega</h3>
@@ -73,7 +132,7 @@ export function Cart() {
         </div>
         <div className="cart__footerRow cart__footerTotal">
           <h3 className="cart__footerTitle">Total</h3>
-          <h3 className="cart__footerPrice">R$ 1500,00</h3>
+          <h3 className="cart__footerPrice">R$ {(subtotal / 100).toFixed(2).replace(".", ",")}</h3>
         </div>
         <div className="cart__footerRow cart__footerBuy">
           <button type="button" className="cart__buy">
@@ -82,5 +141,5 @@ export function Cart() {
         </div>
       </section>
     </div>
-  )
+  );
 }
