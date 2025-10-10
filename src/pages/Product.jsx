@@ -62,7 +62,7 @@ export function Product() {
     localStorage.setItem("carrinho", JSON.stringify(carrinhoAtual));
 
     alert(`✅ Adicionado ao carrinho: ${quantidade}x ${product.nome}`);
-    navigate("/carrinho");
+    navigate("/carrinho"); //
   };
 
   return (
