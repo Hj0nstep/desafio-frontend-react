@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { produtos } from "../data/products";
+// import { produtos } from "../data/products"; // removido, agora usamos API
 
 import PlantImage from "../assets/Plant.png";
 import CowImage from "../assets/Cow.png";
@@ -11,6 +11,7 @@ import PlusImage from "../assets/Plus.svg";
 
 import "../css/product.css";
 
+// Função para formatar preço em reais
 function formatPrice(priceInCents) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -18,6 +19,7 @@ function formatPrice(priceInCents) {
   }).format(priceInCents / 100);
 }
 
+// Gera ID único para cada item do carrinho
 function gerarIdUnico() {
   return Math.random().toString(36).substring(2, 6) + Date.now().toString(36);
 }
@@ -25,10 +27,24 @@ function gerarIdUnico() {
 export function Product() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const product = produtos.find(p => p.id === id);
 
+  const [product, setProduct] = useState(null); // agora carregamos via API
   const [quantidade, setQuantidade] = useState(1);
   const [observacoes, setObservacoes] = useState("");
+
+  // -----------------------------
+  // useEffect para buscar o produto específico via API
+  // GET /produtos/[id]
+  // -----------------------------
+  useEffect(() => {
+    fetch(`http://localhost:3001/produtos/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Produto não encontrado");
+        return res.json();
+      })
+      .then(data => setProduct(data))
+      .catch(err => setProduct(null));
+  }, [id]);
 
   if (!product) {
     return (
@@ -45,24 +61,33 @@ export function Product() {
     );
   }
 
+  // -----------------------------
+  // Função para adicionar produto ao carrinho via API
+  // POST /carrinho
+  // -----------------------------
   const handleComprar = () => {
     const item = {
       id: gerarIdUnico(),
       idProduto: product.id,
       nome: product.nome,
-      imagem: `/${product.imagem}`, // ✅ caminho direto da pasta public/
+      imagem: `/${product.imagem}`,
       preco: product.preco.por,
       vegano: product.vegano,
       quantidade: quantidade.toString(),
       observacao: observacoes,
     };
 
-    const carrinhoAtual = JSON.parse(localStorage.getItem("carrinho")) || [];
-    carrinhoAtual.push(item);
-    localStorage.setItem("carrinho", JSON.stringify(carrinhoAtual));
-
-    alert(`✅ Adicionado ao carrinho: ${quantidade}x ${product.nome}`);
-    navigate("/carrinho"); //
+    fetch("http://localhost:3001/carrinho", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Erro ao adicionar ao carrinho");
+        alert(`✅ Adicionado ao carrinho: ${quantidade}x ${product.nome}`);
+        navigate("/carrinho");
+      })
+      .catch(err => alert(err.message));
   };
 
   return (
@@ -74,7 +99,7 @@ export function Product() {
           <section className="product">
             <div className="product__container--image">
               <img
-                src={`/${product.imagem}`} // ✅ imagem da pasta public/
+                src={`/${product.imagem}`}
                 className="product__image"
                 alt={`Imagem do produto ${product.nome}`}
               />
@@ -147,3 +172,10 @@ export function Product() {
     </>
   );
 }
+
+
+
+
+
+
+
