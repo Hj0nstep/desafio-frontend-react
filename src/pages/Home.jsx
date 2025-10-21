@@ -1,28 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";  // ALTERADO: Imports de useState e useEffect adicionados
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { ProductCard } from "../components/ProductCard"; 
+import { ProductCard } from "../components/ProductCard";
+
+// ALTERADO: Importação estática removida (arquivo products.js foi deletado)
+// import { produtos } from "../data/products";
+
 import PlantImage from "../assets/Plant.png";
 import CowImage from "../assets/Cow.png";
-import { produtos } from "../data/products";
 import "../css/home.css";
 
 export function Home() {
-  
+  // NOVO: Estado para armazenar produtos da API
+  const [listaProdutos, setListaProdutos] = useState([]);
+    
+  // NOVO: useEffect para buscar produtos da API na montagem
+  useEffect(() => {
+    fetch("http://localhost:3001/produtos")
+      .then(resposta => resposta.json())
+      .then(dadosRecebidos => {
+        setListaProdutos(dadosRecebidos);
+      })
+      .catch(erro => {
+        console.error("Erro ao buscar produtos:", erro);
+      });
+  }, []);
 
-  // Função auxiliar para formatar o preço em reais com vírgula
-  // Filtra os produtos por categoria para exibir separadamente
- 
-  const classicos = produtos.filter(p => p.categoria === "clássicos");
-  const gelados = produtos.filter(p => p.categoria === "gelados");
+  const classicos = listaProdutos.filter(p => p.categoria === "classicos");
+  const gelados = listaProdutos.filter(p => p.categoria === "gelados");
 
-  // Renderização da estrutura da página
+  if (listaProdutos.length === 0) {
+    return (
+      <>
+        <Header />
+        <main><div className="container"><p>Carregando produtos...</p></div></main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
-
-      {/* Seção de slogan */}
-      <section className="slogan">
+       <section className="slogan">
         <div className="container">
           <h1 className="slogan__title">Fragrância e sabor elevado ao cubo</h1>
           <p className="slogan__text">
@@ -30,10 +50,10 @@ export function Home() {
           </p>
         </div>
       </section>
-
-      {/* Conteúdo principal da página */}
+      
+       {/* Conteúdo principal da página */}
       <main>
-       {/* Seção de produtos clássicos usando ProductCard */}
+      {/* Seção de produtos clássicos usando ProductCard */}
         <section className="products">
           <div className="container">
             <h2 className="products__title">Clássicos</h2>
@@ -41,10 +61,10 @@ export function Home() {
               {classicos.map(produto => (
                 <ProductCard
                   key={produto.id}
-                  image={produto.imagem}
+                  image={`/${produto.imagem}`}
                   name={produto.nome}
                   price={produto.preco.por}
-                  oldPrice={produto.preco.de}
+                  oldPrice={produto.preco.de !== produto.preco.por ? produto.preco.de : null}
                   tagIcon={produto.vegano ? PlantImage : CowImage}
                   tagText={produto.vegano ? "Vegano" : "Contém lactose"}
                   link={`/product/${produto.id}`}
@@ -53,8 +73,8 @@ export function Home() {
             </div>
           </div>
         </section>
-
-        {/* Seção de produtos gelados usando ProductCard */}
+             
+             {/* Seção de produtos gelados usando ProductCard */}
         <section className="products">
           <div className="container">
             <h2 className="products__title">Gelados</h2>
@@ -62,10 +82,10 @@ export function Home() {
               {gelados.map(produto => (
                 <ProductCard
                   key={produto.id}
-                  image={produto.imagem}
+                  image={`/${produto.imagem}`}
                   name={produto.nome}
                   price={produto.preco.por}
-                  oldPrice={produto.preco.de}
+                  oldPrice={produto.preco.de !== produto.preco.por ? produto.preco.de : null}
                   tagIcon={produto.vegano ? PlantImage : CowImage}
                   tagText={produto.vegano ? "Vegano" : "Contém lactose"}
                   link={`/product/${produto.id}`}
@@ -80,5 +100,3 @@ export function Home() {
     </>
   );
 }
-
-

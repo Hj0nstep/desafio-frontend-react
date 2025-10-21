@@ -145,36 +145,5 @@
       "categoria": "gelados"
     }
   ],
-  "carrinho": [
-    {
-      "id": "7c28",
-      "idProduto": "6",
-      "nome": "Macchiato",
-      "imagem": "product-06.png",
-      "preco": 800,
-      "vegano": false,
-      "quantidade": 7,
-      "observacao": ""
-    },
-    {
-      "id": "ee5c",
-      "idProduto": "5",
-      "nome": "Latte",
-      "imagem": "product-05.png",
-      "preco": 1000,
-      "vegano": false,
-      "quantidade": 1,
-      "observacao": ""
-    },
-    {
-      "id": "38c4",
-      "idProduto": "2",
-      "nome": "Americano",
-      "imagem": "product-02.png",
-      "preco": 600,
-      "vegano": true,
-      "quantidade": 5,
-      "observacao": ""
-    }
-  ]
+  "carrinho": []
 }

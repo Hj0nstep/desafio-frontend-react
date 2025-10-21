@@ -1,4 +1,3 @@
-// src/components/ProductCard.jsx
 import { Link } from "react-router-dom";
 import "../css/home.css"; 
 

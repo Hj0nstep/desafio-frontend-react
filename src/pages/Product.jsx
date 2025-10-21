@@ -12,6 +12,7 @@ import PlusImage from "../assets/Plus.svg";
 import "../css/product.css";
 
 // Função para formatar preço em reais
+
 function formatPrice(priceInCents) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",

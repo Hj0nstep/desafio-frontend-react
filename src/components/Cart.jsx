@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; 
+import { useState, useEffect } from "react";
 import closeImage from "../assets/X.svg";
 import deleteImage from "../assets/Trash.svg";
 import plantImage from "../assets/Plant.png";
@@ -7,42 +7,100 @@ import plusImage from "../assets/Plus.svg";
 import minusImage from "../assets/Minus.svg";
 import "../css/cart.css";
 
+const API_URL = "http://localhost:3001/carrinho"; // URL base da API do carrinho
+
 export function Cart({ onClose }) {
-  
-  const [cartProducts, setCartProducts] = useState(() => {
-    const savedCart = localStorage.getItem("carrinho");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const [cartProducts, setCartProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  
+  const fetchCartItems = () => {
+    setLoading(true);
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => {
+        setCartProducts(data);
+      })
+      .catch(error => {
+        console.error("Erro ao buscar carrinho:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    localStorage.setItem("carrinho", JSON.stringify(cartProducts));
-  }, [cartProducts]);
+    fetchCartItems();
+  }, []);
 
-  
   const handlePlus = (id) => {
-    setCartProducts(prev =>
-      prev.map(p =>
-        p.id === id ? { ...p, quantidade: Number(p.quantidade) + 1 } : p
-      )
-    );
+    const product = cartProducts.find(p => p.id === id);
+    if (!product) return;
+    const novaQuantidade = Number(product.quantidade) + 1;
+
+    fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, quantidade: novaQuantidade.toString() }),
+    })
+      .then(res => res.json())
+      .then(updatedProduct => {
+        setCartProducts(prev =>
+          prev.map(p => (p.id === id ? updatedProduct : p))
+        );
+      })
+      .catch(error => console.error("Erro ao aumentar quantidade:", error));
   };
 
   const handleMinus = (id) => {
-    setCartProducts(prev =>
-      prev.map(p =>
-        p.id === id
-          ? { ...p, quantidade: Number(p.quantidade) > 1 ? Number(p.quantidade) - 1 : 1 }
-          : p
-      )
-    );
+    const product = cartProducts.find(p => p.id === id);
+    if (!product || Number(product.quantidade) <= 1) return;
+    const novaQuantidade = Number(product.quantidade) - 1;
+
+    fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, quantidade: novaQuantidade.toString() }),
+    })
+      .then(res => res.json())
+      .then(updatedProduct => {
+        setCartProducts(prev =>
+          prev.map(p => (p.id === id ? updatedProduct : p))
+        );
+      })
+      .catch(error => console.error("Erro ao diminuir quantidade:", error));
   };
 
   const handleDelete = (id) => {
-    setCartProducts(prev => prev.filter(p => p.id !== id));
+    fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Erro ao deletar item');
+        setCartProducts(prev => prev.filter(p => p.id !== id));
+      })
+      .catch(error => console.error("Erro ao deletar item:", error));
   };
 
-  const handleDeleteAll = () => setCartProducts([]);
+  const handleDeleteAll = () => {
+    const deletePromises = cartProducts.map(produto =>
+      fetch(`${API_URL}/${produto.id}`, { method: "DELETE" })
+    );
+
+    Promise.all(deletePromises)
+      .then(responses => {
+        const allOk = responses.every(res => res.ok);
+        if (allOk) {
+          setCartProducts([]);
+        } else {
+          console.error("Erro ao deletar alguns itens do carrinho.");
+          fetchCartItems();
+        }
+      })
+      .catch(error => {
+        console.error("Erro ao deletar todos os itens:", error);
+        fetchCartItems();
+      });
+  };
 
   const subtotal = cartProducts.reduce(
     (acc, p) => acc + p.preco * Number(p.quantidade),
@@ -67,13 +125,13 @@ export function Cart({ onClose }) {
         </div>
 
         <div className="cart__products">
-          {cartProducts.length === 0 ? (
+          {loading && <p style={{ textAlign: 'center', padding: '20px' }}>Carregando carrinho...</p>}
+          {!loading && cartProducts.length === 0 ? (
             <p style={{ textAlign: 'center', padding: '20px' }}>Seu carrinho está vazio.</p>
           ) : (
-            cartProducts.map(produto => (
+            !loading && cartProducts.map(produto => (
               <div key={produto.id} className="cart__product">
-                <img src={produto.imagem} alt={produto.nome} className="cart__productImage" />
-
+                <img src={produto.imagem.startsWith('/') ? produto.imagem : `/${produto.imagem}`} alt={produto.nome} className="cart__productImage" />
                 <div className="cart__productInfo">
                   <div className="cart__productRow">
                     <div className="cart__productColumn">
@@ -86,14 +144,12 @@ export function Cart({ onClose }) {
                         <span>{produto.vegano ? "Vegano" : "Contém lactose"}</span>
                       </div>
                     </div>
-
                     <button onClick={() => handleDelete(produto.id)} className="cart__productDelete">
                       <img src={deleteImage} alt="Deletar produto" />
                     </button>
                   </div>
-
                   <div className="cart__productRow">
-                    <h3 className="cart__productPrice">R$ {(produto.preco / 100).toFixed(2).replace(".", ",")}</h3>
+                    <h3 className="cart__productPrice">{(produto.preco / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
                     <section className="product__quantity">
                       <button type="button" onClick={() => handleMinus(produto.id)} className="product__quantityMinus">
                         <img src={minusImage} alt="menos um" />
@@ -119,7 +175,7 @@ export function Cart({ onClose }) {
       <section className="cart__footer">
         <div className="cart__footerRow cart__footerSubtotal">
           <h3 className="cart__footerTitle">Subtotal</h3>
-          <h3 className="cart__footerPrice">R$ {(subtotal / 100).toFixed(2).replace(".", ",")}</h3>
+          <h3 className="cart__footerPrice">{(subtotal / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
         </div>
         <div className="cart__footerRow cart__footerDelivery">
           <h3 className="cart__footerTitle">Entrega</h3>
@@ -127,7 +183,7 @@ export function Cart({ onClose }) {
         </div>
         <div className="cart__footerRow cart__footerTotal">
           <h3 className="cart__footerTitle">Total</h3>
-          <h3 className="cart__footerPrice">R$ {(subtotal / 100).toFixed(2).replace(".", ",")}</h3>
+          <h3 className="cart__footerPrice">{(subtotal / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</h3>
         </div>
         <div className="cart__footerRow cart__footerBuy">
           <button type="button" className="cart__buy">
